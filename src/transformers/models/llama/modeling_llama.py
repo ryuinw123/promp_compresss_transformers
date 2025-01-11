@@ -325,14 +325,14 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        # self.convert_proj_1 = LlamaConnectorBlock(config.encoder_hidden_size, config.hidden_size)
-        # self.convert_proj_2 = LlamaConnectorBlock(config.encoder_hidden_size, config.hidden_size)
-        # self.mem_size = config.mem_size
+        self.convert_proj_1 = LlamaConnectorBlock(config.encoder_hidden_size, config.hidden_size)
+        self.convert_proj_2 = LlamaConnectorBlock(config.encoder_hidden_size, config.hidden_size)
+        self.mem_size = config.mem_size
 
     def forward(
         self,
         hidden_states: torch.Tensor,
-        # encoder_hidden_states: torch.Tensor,
+        encoder_hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_value: Optional[Cache] = None,
@@ -346,9 +346,9 @@ class LlamaDecoderLayer(nn.Module):
 
         hidden_states = self.input_layernorm(hidden_states)
 
-        # encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
-        # encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
-        # hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2
+        encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
+        encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
+        hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2
 
         # Self Attention
         hidden_states, self_attn_weights = self.self_attn(
