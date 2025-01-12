@@ -301,19 +301,16 @@ class LlamaAttention(nn.Module):
         return attn_output, attn_weights
 
 class LlamaConnectorBlock(nn.Module):
-    def __init__(self, in_features, out_features , r = 256 , alpha = 32):
+    def __init__(self, in_features, out_features , r = 256):
         super().__init__()
         self.r = r
         self.lora_A = nn.Parameter(torch.zeros((r, in_features)))
         self.lora_B = nn.Parameter(torch.zeros((out_features, r)))
         self.bias = nn.Parameter(torch.zeros((out_features)))
-
-        self.r = r
-        self.alpha = alpha
         
     def forward(self, x):
         adaptation_matrix = (self.lora_B @ self.lora_A)
-        return ((x @ adaptation_matrix.T) + self.bias) * (self.alpha / self.r)
+        return ((x @ adaptation_matrix.T) + self.bias)
 class LlamaDecoderLayer(nn.Module):
     def __init__(self, config: LlamaConfig, layer_idx: int):
         super().__init__()
