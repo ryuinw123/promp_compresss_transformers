@@ -358,7 +358,7 @@ class LlamaDecoderLayer(nn.Module):
         residual = hidden_states
 
         encoder_conv = self.conv1(encoder_hidden_states)
-        print("encoder_conv shape = " , encoder_conv.shape)
+        # print("encoder_conv shape = " , encoder_conv.shape)
         encoder_conv = self.conv2(encoder_hidden_states)
 
         encoder_proj_1 = self.convert_proj_1(encoder_conv)
