@@ -336,8 +336,8 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.conv1 = LlamaConvBlock(config.mem_size , config.mem_size , padding="same")
-        self.conv2 = LlamaConvBlock(config.mem_size , config.mem_size , padding="same")
+        self.conv1 = LlamaConvBlock(config.encoder_hidden_size , config.hidden_size , padding="same")
+        self.conv2 = LlamaConvBlock(config.encoder_hidden_size , config.hidden_size , padding="same")
         self.convert_proj_1 = LlamaConnectorBlock(config.encoder_hidden_size, config.hidden_size)
         self.convert_proj_2 = LlamaConnectorBlock(config.encoder_hidden_size, config.hidden_size)
         self.mem_size = config.mem_size
