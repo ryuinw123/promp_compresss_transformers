@@ -321,8 +321,9 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.convert_proj_1 = PositionWiseFeedForward(config.encoder_hidden_size, config.hidden_size)
-        self.convert_proj_2 = PositionWiseFeedForward(config.encoder_hidden_size, config.hidden_size)
+        self.convert_proj_1 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
+        self.convert_proj_2 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
+        self.convert_proj_3 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
         self.mem_size = config.mem_size
 
     def forward(
@@ -342,7 +343,8 @@ class LlamaDecoderLayer(nn.Module):
 
         encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
         encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
-        hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2
+        encoder_proj_3 = self.convert_proj_3(encoder_hidden_states)
+        hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2 + encoder_proj_3
         
         hidden_states = self.input_layernorm(hidden_states)
 
