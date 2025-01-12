@@ -300,31 +300,16 @@ class LlamaAttention(nn.Module):
         attn_output = self.o_proj(attn_output)
         return attn_output, attn_weights
 
-class LlamaConnectorBlock(nn.Module):
-    def __init__(self, in_features, out_features , r = 256):
-        super().__init__()
-        self.r = r
-        self.lora_A = nn.Parameter(torch.zeros((r, in_features)))
-        self.lora_B = nn.Parameter(torch.zeros((out_features, r)))
-        self.bias = nn.Parameter(torch.zeros((out_features)))
-        
-    def forward(self, x):
-        adaptation_matrix = (self.lora_B @ self.lora_A)
-        return ((x @ adaptation_matrix.T) + self.bias)
-
-class LlamaConvBlock(nn.Module):
-    def __init__(self, in_features, out_features, kernel_size=1, stride=1, padding=0):
-        super().__init__()
-        self.conv = nn.Conv1d(in_channels=in_features, out_channels=out_features, kernel_size=kernel_size, stride=stride, padding=padding)
+class PositionWiseFeedForward(torch.nn.Module):
+    def __init__(self, d_model, d_ff , d_model_output):
+        super(PositionWiseFeedForward, self).__init__()
+        self.fc1 = torch.nn.Linear(d_model, d_ff)
+        self.fc2 = torch.nn.Linear(d_ff, d_model_output)
+        self.relu = torch.nn.ReLU()
 
     def forward(self, x):
-        # x shape: (batch, sequence_length=8, in_features)
-        # Rearrange to (batch, in_features, sequence_length) for Conv1d
-        x = x.permute(0, 2, 1)
-        x = self.conv(x)
-        # Rearrange back to (batch, sequence_length=8, out_features)
-        x = x.permute(0, 2, 1)
-        return x
+        return self.fc2(self.relu(self.fc1(x)))
+
 class LlamaDecoderLayer(nn.Module):
     def __init__(self, config: LlamaConfig, layer_idx: int):
         super().__init__()
@@ -336,10 +321,8 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.conv1 = LlamaConvBlock(config.encoder_hidden_size , config.hidden_size , padding="same")
-        self.conv2 = LlamaConvBlock(config.encoder_hidden_size , config.hidden_size , padding="same")
-        self.convert_proj_1 = LlamaConnectorBlock(config.hidden_size, config.hidden_size)
-        self.convert_proj_2 = LlamaConnectorBlock(config.hidden_size, config.hidden_size)
+        self.convert_proj_1 = PositionWiseFeedForward(config.encoder_hidden_size, config.hidden_size)
+        self.convert_proj_2 = PositionWiseFeedForward(config.encoder_hidden_size, config.hidden_size)
         self.mem_size = config.mem_size
 
     def forward(
@@ -357,12 +340,8 @@ class LlamaDecoderLayer(nn.Module):
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         residual = hidden_states
 
-        encoder_conv = self.conv1(encoder_hidden_states)
-        # print("encoder_conv shape = " , encoder_conv.shape)
-        encoder_conv = self.conv2(encoder_hidden_states)
-
-        encoder_proj_1 = self.convert_proj_1(encoder_conv)
-        encoder_proj_2 = self.convert_proj_2(encoder_conv)
+        encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
+        encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
         hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2
         
         hidden_states = self.input_layernorm(hidden_states)
