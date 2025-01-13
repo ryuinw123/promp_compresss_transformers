@@ -299,7 +299,23 @@ class LlamaAttention(nn.Module):
         attn_output = attn_output.reshape(*input_shape, -1).contiguous()
         attn_output = self.o_proj(attn_output)
         return attn_output, attn_weights
+class SelfAttention(nn.Module):
+    def __init__(self, d, d_q, d_k, d_v):
+        super(SelfAttention, self).__init__()
+        self.d_k = d_k
+        self.query = nn.Linear(d, d_q)
+        self.key = nn.Linear(d, d_k)
+        self.value = nn.Linear(d, d_v)
 
+    def forward(self, q , k , v):
+        Q = self.query(q)
+        K = self.key(k)
+        V = self.value(v)
+        attention_scores = Q @ K.transpose(-2, -1) / torch.sqrt(self.d_k)
+        attention_weights = nn.functional.softmax(attention_scores, dim=-1)
+        context_vector = attention_weights @ V
+        return context_vector
+    
 class PositionWiseFeedForward(torch.nn.Module):
     def __init__(self, d_model, d_ff , d_model_output):
         super(PositionWiseFeedForward, self).__init__()
@@ -321,9 +337,9 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
+        self.cross_attention = SelfAttention(config.hidden_size , config.hidden_size , config.hidden_size , config.hidden_size)
         self.convert_proj_1 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
         self.convert_proj_2 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
-        self.convert_proj_3 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
         self.mem_size = config.mem_size
 
     def forward(
@@ -340,11 +356,6 @@ class LlamaDecoderLayer(nn.Module):
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         residual = hidden_states
-
-        encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
-        encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
-        encoder_proj_3 = self.convert_proj_3(encoder_hidden_states)
-        hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2 + encoder_proj_3
         
         hidden_states = self.input_layernorm(hidden_states)
 
@@ -361,6 +372,13 @@ class LlamaDecoderLayer(nn.Module):
             **kwargs,
         )
         hidden_states = residual + hidden_states
+
+        encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
+        encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
+        encoder_proj = encoder_proj_1 + encoder_proj_2
+        context = self.cross_attention(hidden_states , encoder_proj , encoder_proj)
+
+        hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + context
 
         # Fully Connected
         residual = hidden_states
