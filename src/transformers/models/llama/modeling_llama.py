@@ -18,7 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from typing import Callable, List, Optional, Tuple, Union
-
+import math
 import torch
 import torch.utils.checkpoint
 from torch import nn
@@ -311,7 +311,7 @@ class SelfAttention(nn.Module):
         Q = self.query(q)
         K = self.key(k)
         V = self.value(v)
-        attention_scores = Q @ K.transpose(-2, -1) / torch.sqrt(self.d_k)
+        attention_scores = Q @ K.transpose(-2, -1) / math.sqrt(self.d_k)
         attention_weights = nn.functional.softmax(attention_scores, dim=-1)
         context_vector = attention_weights @ V
         return context_vector
