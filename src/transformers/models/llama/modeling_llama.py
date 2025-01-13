@@ -309,17 +309,11 @@ class SelfAttention(nn.Module):
 
     def forward(self, q , k , v):
         Q = self.query(q)
-        print("Q shape = " , Q.shape)
         K = self.key(k)
-        print("K shape = " ,K.shape)
         V = self.value(v)
-        print("V shape" , v.shape)
         attention_scores = Q @ K.transpose(-2, -1) / math.sqrt(self.d_k)
-        print("attention_scores = " , attention_scores.shape)
         attention_weights = nn.functional.softmax(attention_scores, dim=-1)
-        print("attention_weights shape = " , attention_weights.shape)
         context_vector = attention_weights @ V
-        print("context_vector shape = " , context_vector.shape)
         return context_vector
     
 class PositionWiseFeedForward(torch.nn.Module):
