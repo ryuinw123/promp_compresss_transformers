@@ -345,7 +345,7 @@ class LlamaDecoderLayer(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        encoder_hidden_states: torch.Tensor,
+        encoder_hidden_states: torch.Tensor = None,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_value: Optional[Cache] = None,
@@ -373,7 +373,7 @@ class LlamaDecoderLayer(nn.Module):
         )
         hidden_states = residual + hidden_states
 
-        if (encoder_hidden_states):
+        if (encoder_hidden_states != None):
             encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
             encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
             encoder_proj_3 = self.convert_proj_3(encoder_hidden_states)
