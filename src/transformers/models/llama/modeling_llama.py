@@ -378,10 +378,8 @@ class LlamaDecoderLayer(nn.Module):
             encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
             encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
             encoder_proj = encoder_proj_1 + encoder_proj_2
-            print("encoder_proj" , encoder_proj.shape)
-            context = self.convert_attention(hidden_states , encoder_proj , encoder_proj)
+            context = self.convert_attention(encoder_proj , hidden_states , hidden_states)
             context = self.convert_attention_layernorm(context)
-            print("context" , context.shape)
             hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + context
 
         # Fully Connected
