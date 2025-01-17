@@ -299,32 +299,16 @@ class LlamaAttention(nn.Module):
         attn_output = attn_output.reshape(*input_shape, -1).contiguous()
         attn_output = self.o_proj(attn_output)
         return attn_output, attn_weights
-class SelfAttention(nn.Module):
-    def __init__(self, d, d_q, d_k, d_v):
-        super(SelfAttention, self).__init__()
-        self.d_k = d_k
-        self.query = nn.Linear(d, d_q)
-        self.key = nn.Linear(d, d_k)
-        self.value = nn.Linear(d, d_v)
-
-    def forward(self, q , k , v):
-        Q = self.query(q)
-        K = self.key(k)
-        V = self.value(v)
-        attention_scores = Q @ K.transpose(-2, -1) / math.sqrt(self.d_k)
-        attention_weights = nn.functional.softmax(attention_scores, dim=-1)
-        context_vector = attention_weights @ V
-        return context_vector
     
 class PositionWiseFeedForward(torch.nn.Module):
     def __init__(self, d_model, d_ff , d_model_output):
         super(PositionWiseFeedForward, self).__init__()
         self.fc1 = torch.nn.Linear(d_model, d_ff)
         self.fc2 = torch.nn.Linear(d_ff, d_model_output)
-        self.relu = torch.nn.ReLU()
+        self.silu = torch.nn.SiLU()
 
     def forward(self, x):
-        return self.fc2(self.relu(self.fc1(x)))
+        return self.fc2(self.silu(self.fc1(x)))
 
 class LlamaDecoderLayer(nn.Module):
     def __init__(self, config: LlamaConfig, layer_idx: int):
@@ -376,9 +360,9 @@ class LlamaDecoderLayer(nn.Module):
         if (encoder_hidden_states != None):
             encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
             encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
-            encoder_proj_3 = self.convert_proj_3(encoder_hidden_states)
+            encoder_proj_3 = self.convert_proj_3(encoder_proj_1 + encoder_proj_2)
             # print(hidden_states.shape)
-            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2 + encoder_proj_3
+            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_3
 
         # Fully Connected
         residual = hidden_states
