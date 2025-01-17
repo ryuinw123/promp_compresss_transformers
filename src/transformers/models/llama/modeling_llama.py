@@ -323,7 +323,7 @@ class LlamaDecoderLayer(nn.Module):
 
         self.convert_proj_1 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
         self.convert_proj_2 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
-        self.convert_proj_3 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
+        self.convert_proj_3 = PositionWiseFeedForward(config.hidden_size, config.hidden_size  , config.hidden_size)
         self.mem_size = config.mem_size
 
     def forward(
@@ -360,9 +360,10 @@ class LlamaDecoderLayer(nn.Module):
         if (encoder_hidden_states != None):
             encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
             encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
-            encoder_proj_3 = self.convert_proj_3(encoder_proj_1 + encoder_proj_2)
+            encoder_proj = encoder_proj_1 + encoder_proj_2
+            encoder_proj = self.convert_proj_3(encoder_proj)
             # print(hidden_states.shape)
-            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_3
+            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj
 
         # Fully Connected
         residual = hidden_states
