@@ -300,15 +300,8 @@ class LlamaAttention(nn.Module):
         attn_output = self.o_proj(attn_output)
         return attn_output, attn_weights
     
-class PositionWiseFeedForward(torch.nn.Module):
-    def __init__(self, d_model, d_ff , d_model_output):
-        super(PositionWiseFeedForward, self).__init__()
-        self.fc1 = torch.nn.Linear(d_model, d_ff)
-        self.fc2 = torch.nn.Linear(d_ff, d_model_output)
-        self.silu = torch.nn.SiLU()
 
-    def forward(self, x):
-        return self.fc2(self.silu(self.fc1(x)))
+
 
 class LlamaDecoderLayer(nn.Module):
     def __init__(self, config: LlamaConfig, layer_idx: int):
@@ -321,8 +314,9 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.convert_proj_1 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
-        self.convert_proj_2 = PositionWiseFeedForward(config.encoder_hidden_size, (config.encoder_hidden_size + config.hidden_size) // 2  , config.hidden_size)
+        self.feature_extraction_1 = LlamaMLP(config)
+        self.feature_extraction_2 = LlamaMLP(config)
+
         self.mem_size = config.mem_size
 
     def forward(
@@ -357,11 +351,10 @@ class LlamaDecoderLayer(nn.Module):
         hidden_states = residual + hidden_states
 
         if (encoder_hidden_states != None):
-            encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
-            encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
-            encoder_proj = encoder_proj_1 + encoder_proj_2
+            encoder_proj_1 = self.feature_extraction_1(encoder_hidden_states)
+            encoder_proj_2 = self.feature_extraction_2(encoder_hidden_states)
             # print(hidden_states.shape)
-            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj
+            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2
 
         # Fully Connected
         residual = hidden_states
