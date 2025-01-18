@@ -436,7 +436,7 @@ install_requires = [
 ]
 
 setup(
-    name="transformers",
+    name="transformers_custom",
     version="4.49.0.dev0",  # expected format is one of x.y.z.dev0, or x.y.z.rc1 or x.y.z (no to dashes, yes to dots)
     author="The Hugging Face team (past and future) with the help of all our contributors (https://github.com/huggingface/transformers/graphs/contributors)",
     author_email="transformers@huggingface.co",
