@@ -301,7 +301,20 @@ class LlamaAttention(nn.Module):
         return attn_output, attn_weights
     
 
+class CloneLlamaMLP(nn.Module):
+    def __init__(self, config , intermediate_size):
+        super().__init__()
+        self.config = config
+        self.hidden_size = config.hidden_size
+        self.intermediate_size = intermediate_size
+        self.gate_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=config.mlp_bias)
+        self.up_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=config.mlp_bias)
+        self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=config.mlp_bias)
+        self.act_fn = ACT2FN[config.hidden_act]
 
+    def forward(self, x):
+        down_proj = self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
+        return down_proj
 
 class LlamaDecoderLayer(nn.Module):
     def __init__(self, config: LlamaConfig, layer_idx: int):
@@ -318,8 +331,8 @@ class LlamaDecoderLayer(nn.Module):
 
         if (self.is_decoder):
             self.mem_size = config.mem_size
-            self.feature_extraction_1 = LlamaMLP(config)
-            self.feature_extraction_2 = LlamaMLP(config)
+            # self.feature_extraction_1 = CloneLlamaMLP(config , config.hidden_size // 2)
+            # self.feature_extraction_2 = CloneLlamaMLP(config , config.hidden_size // 2)
 
     def forward(
         self,
@@ -352,11 +365,11 @@ class LlamaDecoderLayer(nn.Module):
         )
         hidden_states = residual + hidden_states
 
-        if (self.is_decoder and encoder_hidden_states != None):
-            encoder_proj_1 = self.feature_extraction_1(encoder_hidden_states)
-            encoder_proj_2 = self.feature_extraction_2(encoder_hidden_states)
-            # print(hidden_states.shape)
-            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2
+        # if (self.is_decoder and encoder_hidden_states != None):
+        #     encoder_proj_1 = self.feature_extraction_1(encoder_hidden_states)
+        #     encoder_proj_2 = self.feature_extraction_2(encoder_hidden_states)
+        #     # print(hidden_states.shape)
+        #     hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2
 
         # Fully Connected
         residual = hidden_states
