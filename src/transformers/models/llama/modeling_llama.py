@@ -314,10 +314,12 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.feature_extraction_1 = LlamaMLP(config)
-        self.feature_extraction_2 = LlamaMLP(config)
-
         self.mem_size = config.mem_size
+        self.is_decoder = config.is_decoder
+
+        if (self.is_decoder):
+            self.feature_extraction_1 = LlamaMLP(config)
+            self.feature_extraction_2 = LlamaMLP(config)
 
     def forward(
         self,
@@ -350,7 +352,7 @@ class LlamaDecoderLayer(nn.Module):
         )
         hidden_states = residual + hidden_states
 
-        if (encoder_hidden_states != None):
+        if (self.is_decoder and encoder_hidden_states != None):
             encoder_proj_1 = self.feature_extraction_1(encoder_hidden_states)
             encoder_proj_2 = self.feature_extraction_2(encoder_hidden_states)
             # print(hidden_states.shape)
