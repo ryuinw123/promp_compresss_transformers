@@ -329,11 +329,11 @@ class LlamaDecoderLayer(nn.Module):
 
         self.is_decoder = config.is_decoder if config.is_decoder else False 
 
-        # if (self.is_decoder):
-        #     self.mem_size = config.mem_size
-        #     self.feature_extraction_1 = CloneLlamaMLP(config , 128)
-        #     self.feature_extraction_2 = CloneLlamaMLP(config , 128)
-        #     self.feature_extraction_3 = CloneLlamaMLP(config , 128)
+        if (self.is_decoder):
+            self.mem_size = config.mem_size
+            self.feature_extraction_1 = CloneLlamaMLP(config , 128)
+            self.feature_extraction_2 = CloneLlamaMLP(config , 128)
+            self.feature_extraction_3 = CloneLlamaMLP(config , 128)
 
     def forward(
         self,
@@ -366,13 +366,13 @@ class LlamaDecoderLayer(nn.Module):
         )
         hidden_states = residual + hidden_states
 
-        # if (self.is_decoder and encoder_hidden_states != None):
-        #     encoder_proj_1 = self.feature_extraction_1(encoder_hidden_states)
-        #     encoder_proj_2 = self.feature_extraction_2(encoder_hidden_states)
-        #     encoder_proj = encoder_proj_1 + encoder_proj_2
-        #     encoder_proj = self.feature_extraction_3(encoder_proj)
-        #     # print(hidden_states.shape)
-        #     hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + (encoder_proj * 32/(128))
+        if (self.is_decoder and encoder_hidden_states != None):
+            encoder_proj_1 = self.feature_extraction_1(encoder_hidden_states)
+            encoder_proj_2 = self.feature_extraction_2(encoder_hidden_states)
+            encoder_proj = encoder_proj_1 + encoder_proj_2
+            encoder_proj = self.feature_extraction_3(encoder_proj)
+            # print(hidden_states.shape)
+            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + (encoder_proj)
 
         # Fully Connected
         residual = hidden_states
