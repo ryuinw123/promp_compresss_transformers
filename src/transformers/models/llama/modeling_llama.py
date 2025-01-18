@@ -314,10 +314,10 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.mem_size = config.mem_size
-        self.is_decoder = config.is_decoder
+        self.is_decoder = config.is_decoder if config.is_decoder else False 
 
         if (self.is_decoder):
+            self.mem_size = config.mem_size
             self.feature_extraction_1 = LlamaMLP(config)
             self.feature_extraction_2 = LlamaMLP(config)
 
