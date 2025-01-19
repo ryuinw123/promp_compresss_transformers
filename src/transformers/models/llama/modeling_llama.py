@@ -327,9 +327,9 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.is_decoder = config.is_decoder if config.is_decoder else False 
+        self.is_decoder = True if config.is_encoder == False else False 
 
-        if (self.is_decoder):
+        if (self.is_encoder):
             self.mem_size = config.mem_size
             self.feature_extraction_1 = CloneLlamaMLP(config , 128)
             self.feature_extraction_2 = CloneLlamaMLP(config , 128)
@@ -533,6 +533,8 @@ class LlamaModel(LlamaPreTrainedModel):
         self.rotary_emb = LlamaRotaryEmbedding(config=config)
         self.gradient_checkpointing = False
 
+        self.is_encoder = config.is_encoder
+
         # Initialize weights and apply final processing
         self.post_init()
 
@@ -588,10 +590,13 @@ class LlamaModel(LlamaPreTrainedModel):
 
         if position_ids is None:
             position_ids = cache_position.unsqueeze(0)
-
-        causal_mask = self._update_causal_mask(
-            attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
-        )
+        
+        if self.is_encoder:
+            causal_mask = None
+        else:
+            causal_mask = self._update_causal_mask(
+                attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
+            )
 
         hidden_states = inputs_embeds
 
