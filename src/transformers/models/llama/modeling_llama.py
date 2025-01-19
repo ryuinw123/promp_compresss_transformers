@@ -329,7 +329,7 @@ class LlamaDecoderLayer(nn.Module):
 
         self.is_decoder = True if config.is_encoder == False else False 
 
-        if (self.is_encoder):
+        if (self.is_decoder):
             self.mem_size = config.mem_size
             self.feature_extraction_1 = CloneLlamaMLP(config , 128)
             self.feature_extraction_2 = CloneLlamaMLP(config , 128)
