@@ -365,15 +365,11 @@ class LlamaDecoderLayer(nn.Module):
             **kwargs,
         )
         hidden_states = residual + hidden_states
-        print("Encoder hidden states pass shape = " , encoder_hidden_states.shape if encoder_hidden_states != None else None)
-        print("is Decoder = " , self.is_decoder)
         if (self.is_decoder and encoder_hidden_states != None):
-            print("Enter Decoder ", encoder_hidden_states.shape if encoder_hidden_states != None else None)
             encoder_proj_1 = self.feature_extraction_1(encoder_hidden_states)
             encoder_proj_2 = self.feature_extraction_2(encoder_hidden_states)
             encoder_proj = encoder_proj_1 + encoder_proj_2
             encoder_proj = self.feature_extraction_3(encoder_proj)
-            # print(hidden_states.shape)
             hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + (encoder_proj)
 
         # Fully Connected
@@ -594,7 +590,6 @@ class LlamaModel(LlamaPreTrainedModel):
         causal_mask = self._update_causal_mask(
                 attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         )
-        print("Enter encode_embeds" , encodes_embeds if encodes_embeds == None else encodes_embeds)
         hidden_states = inputs_embeds
         encode_hidden_states = encodes_embeds
 
@@ -610,7 +605,6 @@ class LlamaModel(LlamaPreTrainedModel):
                 all_hidden_states += (hidden_states,)
 
             if self.gradient_checkpointing and self.training:
-                print("Enter checkpoint" , encode_hidden_states.shape if encode_hidden_states != None else None)
                 layer_outputs = self._gradient_checkpointing_func(
                     decoder_layer.__call__,
                     hidden_states,
@@ -624,7 +618,6 @@ class LlamaModel(LlamaPreTrainedModel):
                     position_embeddings,
                 )
             else:
-                print("original embed" , encode_hidden_states.shape if encode_hidden_states != None else None)
                 layer_outputs = decoder_layer(
                     hidden_states,
                     encoder_hidden_states = encode_hidden_states,
@@ -869,7 +862,6 @@ class LlamaForCausalLM(LlamaPreTrainedModel, GenerationMixin):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
-        print("Enter causal" , encodes_embeds.shape if encodes_embeds != None else None)
         outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
