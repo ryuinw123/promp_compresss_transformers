@@ -594,7 +594,7 @@ class LlamaModel(LlamaPreTrainedModel):
         causal_mask = self._update_causal_mask(
                 attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         )
-        print("Enter encode_embeds" , encodes_embeds.shape if encodes_embeds else None)
+        print("Enter encode_embeds" , encodes_embeds if encodes_embeds == None else encodes_embeds)
         hidden_states = inputs_embeds
         encode_hidden_states = encodes_embeds
 
