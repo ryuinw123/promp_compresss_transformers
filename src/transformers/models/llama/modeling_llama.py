@@ -624,7 +624,7 @@ class LlamaModel(LlamaPreTrainedModel):
                     position_embeddings,
                 )
             else:
-                print("original embed" , encode_embeds.shape if encode_embeds != None else None)
+                print("original embed" , encodes_embeds.shape if encodes_embeds != None else None)
                 layer_outputs = decoder_layer(
                     hidden_states,
                     encoder_hidden_states = encode_hidden_states,
