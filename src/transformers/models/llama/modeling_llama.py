@@ -552,7 +552,7 @@ class LlamaModel(LlamaPreTrainedModel):
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[Cache] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
-        encode_embeds: Optional[torch.FloatTensor] = None,
+        encodes_embeds: Optional[torch.FloatTensor] = None,
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
@@ -594,9 +594,9 @@ class LlamaModel(LlamaPreTrainedModel):
         causal_mask = self._update_causal_mask(
                 attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         )
-        print("Enter encode_embeds" , encode_embeds.shape if encode_embeds else None)
+        print("Enter encode_embeds" , encodes_embeds.shape if encodes_embeds else None)
         hidden_states = inputs_embeds
-        encode_hidden_states = encode_embeds
+        encode_hidden_states = encodes_embeds
 
         # create position embeddings to be shared across the decoder layers
         position_embeddings = self.rotary_emb(hidden_states, position_ids)
@@ -822,6 +822,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel, GenerationMixin):
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[Union[Cache, List[torch.FloatTensor]]] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
+        encodes_embeds : Optional[torch.FloatTensor] = None,
         labels: Optional[torch.LongTensor] = None,
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
@@ -868,14 +869,14 @@ class LlamaForCausalLM(LlamaPreTrainedModel, GenerationMixin):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
-        # print("Enter causal" , encodes_embeds.shape if encodes_embeds != None else None)
+        print("Enter causal" , encodes_embeds.shape if encodes_embeds != None else None)
         outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             position_ids=position_ids,
             past_key_values=past_key_values,
             inputs_embeds=inputs_embeds,
-            # encodes_embeds=encodes_embeds,
+            encodes_embeds=encodes_embeds,
             use_cache=use_cache,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
