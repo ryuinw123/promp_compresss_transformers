@@ -533,8 +533,6 @@ class LlamaModel(LlamaPreTrainedModel):
         self.rotary_emb = LlamaRotaryEmbedding(config=config)
         self.gradient_checkpointing = False
 
-        self.is_encoder = config.is_encoder
-
         # Initialize weights and apply final processing
         self.post_init()
 
@@ -591,12 +589,9 @@ class LlamaModel(LlamaPreTrainedModel):
         if position_ids is None:
             position_ids = cache_position.unsqueeze(0)
         
-        if self.is_encoder:
-            causal_mask = None
-        else:
-            causal_mask = self._update_causal_mask(
+        causal_mask = self._update_causal_mask(
                 attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
-            )
+        )
 
         hidden_states = inputs_embeds
 
