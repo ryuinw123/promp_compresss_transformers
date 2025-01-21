@@ -365,7 +365,7 @@ class LlamaDecoderLayer(nn.Module):
             **kwargs,
         )
         hidden_states = residual + hidden_states
-        print("Encoder hidden states pass shape = " , encoder_hidden_states)
+        print("Encoder hidden states pass shape = " , encoder_hidden_states.shape)
 
         if (self.is_decoder and encoder_hidden_states != None):
             encoder_proj_1 = self.feature_extraction_1(encoder_hidden_states)
