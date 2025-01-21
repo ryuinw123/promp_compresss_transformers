@@ -609,6 +609,7 @@ class LlamaModel(LlamaPreTrainedModel):
                 all_hidden_states += (hidden_states,)
 
             if self.gradient_checkpointing and self.training:
+                print("Enter checkpoint" , encode_embeds.shape)
                 layer_outputs = self._gradient_checkpointing_func(
                     decoder_layer.__call__,
                     hidden_states,
@@ -622,6 +623,7 @@ class LlamaModel(LlamaPreTrainedModel):
                     position_embeddings,
                 )
             else:
+                print("original embed" , encode_embeds.shape)
                 layer_outputs = decoder_layer(
                     hidden_states,
                     encoder_hidden_states = encode_embeds,
@@ -866,6 +868,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel, GenerationMixin):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
+        print("Enter causal" , encodes_embeds.shape)
         outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
