@@ -594,8 +594,9 @@ class LlamaModel(LlamaPreTrainedModel):
         causal_mask = self._update_causal_mask(
                 attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         )
-
+        print("Enter encode_embeds" , encode_embeds.shape)
         hidden_states = inputs_embeds
+        encode_hidden_states = encode_embeds
 
         # create position embeddings to be shared across the decoder layers
         position_embeddings = self.rotary_emb(hidden_states, position_ids)
@@ -609,11 +610,11 @@ class LlamaModel(LlamaPreTrainedModel):
                 all_hidden_states += (hidden_states,)
 
             if self.gradient_checkpointing and self.training:
-                print("Enter checkpoint" , encode_embeds.shape if encode_embeds != None else None)
+                print("Enter checkpoint" , encode_hidden_states.shape if encode_hidden_states != None else None)
                 layer_outputs = self._gradient_checkpointing_func(
                     decoder_layer.__call__,
                     hidden_states,
-                    encode_embeds,
+                    encode_hidden_states,
                     causal_mask,
                     position_ids,
                     past_key_values,
@@ -626,7 +627,7 @@ class LlamaModel(LlamaPreTrainedModel):
                 print("original embed" , encode_embeds.shape if encode_embeds != None else None)
                 layer_outputs = decoder_layer(
                     hidden_states,
-                    encoder_hidden_states = encode_embeds,
+                    encoder_hidden_states = encode_hidden_states,
                     attention_mask=causal_mask,
                     position_ids=position_ids,
                     past_key_value=past_key_values,
