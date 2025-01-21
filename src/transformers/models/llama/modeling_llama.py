@@ -365,6 +365,7 @@ class LlamaDecoderLayer(nn.Module):
             **kwargs,
         )
         hidden_states = residual + hidden_states
+        print("Encoder hidden states pass shape = " , encoder_hidden_states if encoder_hidden_states else None)
         print("Encoder hidden states pass shape = " , encoder_hidden_states.shape if encoder_hidden_states else None)
         print("is Decoder = " , self.is_decoder)
         if (self.is_decoder and encoder_hidden_states != None):
@@ -624,7 +625,7 @@ class LlamaModel(LlamaPreTrainedModel):
                     position_embeddings,
                 )
             else:
-                print("original embed" , encodes_embeds.shape if encodes_embeds != None else None)
+                print("original embed" , encode_hidden_states.shape if encode_hidden_states != None else None)
                 layer_outputs = decoder_layer(
                     hidden_states,
                     encoder_hidden_states = encode_hidden_states,
