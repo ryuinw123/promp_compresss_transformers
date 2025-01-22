@@ -338,7 +338,7 @@ class LlamaDecoderLayer(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        encoder_hidden_states: torch.Tensor = None,
+        encode_hidden_states: torch.Tensor = None,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_value: Optional[Cache] = None,
@@ -365,9 +365,9 @@ class LlamaDecoderLayer(nn.Module):
             **kwargs,
         )
         hidden_states = residual + hidden_states
-        if (self.is_decoder and encoder_hidden_states != None):
-            encoder_proj_1 = self.feature_extraction_1(encoder_hidden_states)
-            encoder_proj_2 = self.feature_extraction_2(encoder_hidden_states)
+        if (self.is_decoder and encode_hidden_states != None):
+            encoder_proj_1 = self.feature_extraction_1(encode_hidden_states)
+            encoder_proj_2 = self.feature_extraction_2(encode_hidden_states)
             encoder_proj = encoder_proj_1 + encoder_proj_2
             encoder_proj = self.feature_extraction_3(encoder_proj)
             hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + (encoder_proj)
@@ -548,7 +548,7 @@ class LlamaModel(LlamaPreTrainedModel):
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[Cache] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
-        encodes_embeds: Optional[torch.FloatTensor] = None,
+        encode_hidden_states: Optional[torch.FloatTensor] = None,
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
@@ -591,7 +591,7 @@ class LlamaModel(LlamaPreTrainedModel):
                 attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         )
         hidden_states = inputs_embeds
-        encode_hidden_states = encodes_embeds
+        encode_hidden_states = encode_hidden_states
 
         # create position embeddings to be shared across the decoder layers
         position_embeddings = self.rotary_emb(hidden_states, position_ids)
@@ -600,7 +600,8 @@ class LlamaModel(LlamaPreTrainedModel):
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
 
-        for decoder_layer in self.layers[: self.config.num_hidden_layers]:
+        for i, decoder_layer in enumerate(self.layers[:self.config.num_hidden_layers]):
+            current_hidden_state = encode_hidden_states[i]
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
 
@@ -608,7 +609,7 @@ class LlamaModel(LlamaPreTrainedModel):
                 layer_outputs = self._gradient_checkpointing_func(
                     decoder_layer.__call__,
                     hidden_states,
-                    encode_hidden_states,
+                    current_hidden_state,
                     causal_mask,
                     position_ids,
                     past_key_values,
@@ -620,7 +621,7 @@ class LlamaModel(LlamaPreTrainedModel):
             else:
                 layer_outputs = decoder_layer(
                     hidden_states,
-                    encoder_hidden_states = encode_hidden_states,
+                    encode_hidden_states = current_hidden_state,
                     attention_mask=causal_mask,
                     position_ids=position_ids,
                     past_key_value=past_key_values,
@@ -815,7 +816,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel, GenerationMixin):
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[Union[Cache, List[torch.FloatTensor]]] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
-        encodes_embeds : Optional[torch.FloatTensor] = None,
+        encode_hidden_states : Optional[torch.FloatTensor] = None,
         labels: Optional[torch.LongTensor] = None,
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
@@ -868,7 +869,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel, GenerationMixin):
             position_ids=position_ids,
             past_key_values=past_key_values,
             inputs_embeds=inputs_embeds,
-            encodes_embeds=encodes_embeds,
+            encode_hidden_states=encode_hidden_states,
             use_cache=use_cache,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
