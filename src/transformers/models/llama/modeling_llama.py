@@ -366,11 +366,11 @@ class LlamaDecoderLayer(nn.Module):
         )
         hidden_states = residual + hidden_states
         if (self.is_decoder and encoder_hidden_states != None):
-            encoder_proj_1 = self.feature_extraction_1(encoder_hidden_states)
-            encoder_proj_2 = self.feature_extraction_2(encoder_hidden_states)
-            encoder_proj = encoder_proj_1 + encoder_proj_2
-            encoder_proj = self.feature_extraction_3(encoder_proj)
-            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + (encoder_proj)
+            encoder_proj_1 = self.convert_proj_1(encoder_hidden_states)
+            encoder_proj_2 = self.convert_proj_2(encoder_hidden_states)
+            encoder_proj_3 = self.convert_proj_3(encoder_hidden_states)
+            # print(hidden_states.shape)
+            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encoder_proj_1 + encoder_proj_2 + encoder_proj_3
 
         # Fully Connected
         residual = hidden_states
