@@ -333,7 +333,6 @@ class LlamaDecoderLayer(nn.Module):
             self.mem_size = config.mem_size
             self.feature_extraction_1 = CloneLlamaMLP(config , 128)
             self.feature_extraction_2 = CloneLlamaMLP(config , 128)
-            self.feature_extraction_3 = CloneLlamaMLP(config , 128)
 
     def forward(
         self,
