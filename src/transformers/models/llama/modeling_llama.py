@@ -330,10 +330,10 @@ class LlamaDecoderLayer(nn.Module):
         self.is_decoder = True if config.is_decoder == True else False 
 
         if (self.is_decoder):
+            self.act_fn = ACT2FN[config.hidden_act]
             self.mem_size = config.mem_size
             self.feature_extraction_1 = CloneLlamaMLP(config , 128)
             self.feature_extraction_2 = CloneLlamaMLP(config , 128)
-            self.feature_extraction_3 = CloneLlamaMLP(config , 128)
 
     def forward(
         self,
@@ -366,10 +366,10 @@ class LlamaDecoderLayer(nn.Module):
         )
         hidden_states = residual + hidden_states
         if (self.is_decoder and encode_hidden_states != None):
-            encoder_proj_1 = self.feature_extraction_1(encode_hidden_states)
-            encoder_proj_2 = self.feature_extraction_2(encode_hidden_states)
+            encoder_proj_1 = self.feature_extraction_1(encode_hidden_states[:,:self.mem_size,:])
+            encoder_proj_2 = self.feature_extraction_2(encode_hidden_states[:,:self.mem_size,:])
             encoder_proj = encoder_proj_1 + encoder_proj_2
-            encoder_proj = self.feature_extraction_3(encoder_proj)
+            encoder_proj = self.act_fn(encoder_proj)
             hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + (encoder_proj)
 
         # Fully Connected
@@ -593,7 +593,7 @@ class LlamaModel(LlamaPreTrainedModel):
                 attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         )
         hidden_states = inputs_embeds
-        print("hiddenstate at model",encode_hidden_states)
+        # print("hiddenstate at model",encode_hidden_states)
         encode_hidden_states = encode_hidden_states
 
         # create position embeddings to be shared across the decoder layers
@@ -893,7 +893,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel, GenerationMixin):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
-        print("hidden state at causal",encode_hidden_states)
+        # print("hidden state at causal",encode_hidden_states)
         outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
