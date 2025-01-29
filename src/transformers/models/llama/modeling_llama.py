@@ -591,6 +591,7 @@ class LlamaModel(LlamaPreTrainedModel):
                 attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         )
         hidden_states = inputs_embeds
+        print(encode_hidden_states)
         encode_hidden_states = encode_hidden_states
 
         # create position embeddings to be shared across the decoder layers
@@ -863,6 +864,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel, GenerationMixin):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
+        print(encode_hidden_states)
         outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
