@@ -329,12 +329,6 @@ class LlamaDecoderLayer(nn.Module):
 
         self.is_decoder = True if config.is_decoder == True else False 
 
-        if (self.is_decoder):
-            self.act_fn = ACT2FN[config.hidden_act]
-            self.mem_size = config.mem_size
-            self.feature_extraction_1 = CloneLlamaMLP(config , 128)
-            self.feature_extraction_2 = CloneLlamaMLP(config , 128)
-
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -366,11 +360,7 @@ class LlamaDecoderLayer(nn.Module):
         )
         hidden_states = residual + hidden_states
         if (self.is_decoder and encode_hidden_states != None):
-            encoder_proj_1 = self.feature_extraction_1(encode_hidden_states[:,:self.mem_size,:])
-            encoder_proj_2 = self.feature_extraction_2(encode_hidden_states[:,:self.mem_size,:])
-            encoder_proj = encoder_proj_1 + encoder_proj_2
-            encoder_proj = self.act_fn(encoder_proj)
-            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + (encoder_proj)
+            hidden_states[:,:self.mem_size,:] = hidden_states[:,:self.mem_size,:] + encode_hidden_states[:,:self.mem_size,:]
 
         # Fully Connected
         residual = hidden_states
