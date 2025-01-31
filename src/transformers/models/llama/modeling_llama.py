@@ -329,6 +329,9 @@ class LlamaDecoderLayer(nn.Module):
 
         self.is_decoder = True if config.is_decoder == True else False 
 
+        if (self.is_decoder):
+            self.mem_size = config.mem_size
+
     def forward(
         self,
         hidden_states: torch.Tensor,
