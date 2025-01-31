@@ -606,7 +606,7 @@ class LlamaModel(LlamaPreTrainedModel):
         for i, decoder_layer in enumerate(self.layers[:self.config.num_hidden_layers]):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
-            if (self.is_decoder):
+            if (self.is_decoder and encode_hidden_states != None):
                 current_hidden_state = encode_hidden_states[i]
 
                 if self.gradient_checkpointing and self.training:
