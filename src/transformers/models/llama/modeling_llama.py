@@ -284,6 +284,7 @@ class LlamaAttention(nn.Module):
                 )
             else:
                 attention_interface = ALL_ATTENTION_FUNCTIONS[self.config._attn_implementation]
+                print(self.config._attn_implementation)
 
         attn_output, attn_weights = attention_interface(
             self,
