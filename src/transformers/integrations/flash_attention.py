@@ -45,7 +45,12 @@ def flash_attention_forward(
             target_dtype = next(layer for layer in module.modules() if isinstance(layer, torch.nn.Linear)).weight.dtype
 
     # FA2 always relies on the value set in the module, so remove it if present in kwargs to avoid passing it twice
+    use_module_causal = True
+    if kwargs.get("full_attn_mask") == True:
+        use_module_causal = False
     kwargs.pop("is_causal", None)
+
+    print("is causal = " , use_module_causal)
 
     attn_output = _flash_attention_forward(
         query,
@@ -53,7 +58,7 @@ def flash_attention_forward(
         value,
         attention_mask,
         query_length=seq_len,
-        is_causal=module.is_causal,
+        is_causal=module.is_causal if use_module_causal else False,
         dropout=dropout,
         softmax_scale=scaling,
         sliding_window=sliding_window,
