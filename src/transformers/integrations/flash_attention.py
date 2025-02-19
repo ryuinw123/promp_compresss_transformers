@@ -46,6 +46,8 @@ def flash_attention_forward(
 
     # FA2 always relies on the value set in the module, so remove it if present in kwargs to avoid passing it twice
     use_module_causal = True
+    print(kwargs)
+    print(kwargs.get("full_attn_mask"))
     if kwargs.get("full_attn_mask") == True:
         use_module_causal = False
     kwargs.pop("is_causal", None)
